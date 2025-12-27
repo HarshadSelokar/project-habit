@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { signOut } from "../lib/auth";
 import HabitGrid from "@/components/habits/HabitGrid";
+import AddHabitForm from "@/components/habits/AddHabitForm";
 import CardSkeleton from "@/components/ui/CardSkeleton";
 import { supabase } from "@/lib/supabase";
-import type { HabitLog, Goals } from "@/types";
+import type { Habit, HabitLog, Goals } from "@/types";
 import { getDaysOfMonth } from "@/utils/dates";
 import { calculateDailyCompletion, calculateOverallCompletion } from "@/utils/analytics";
 import CompletionChart from "@/components/analytics/CompletionChart";
@@ -19,7 +20,9 @@ export default function Dashboard() {
   const userId = user?.id;
 
   const [logs, setLogs] = useState<HabitLog[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [habitCount, setHabitCount] = useState(0);
+  const [loadingData, setLoadingData] = useState(true);
   const [goals, setGoals] = useState<Goals[]>([]);
 
   const days = getDaysOfMonth(YEAR, MONTH);
@@ -31,6 +34,7 @@ export default function Dashboard() {
   }, [userId]);
 
   const fetchData = async () => {
+    setLoadingData(true);
     const { data: habits } = await supabase
       .from("habits")
       .select("id")
@@ -41,8 +45,17 @@ export default function Dashboard() {
       .select("*")
       .eq("user_id", userId);
 
-    if (habits) setHabitCount(habits.length);
+    if (habits) {
+      setHabitCount(habits.length);
+    }
     if (logs) setLogs(logs);
+    // fetch full habit records for empty state handling
+    const { data: fullHabits } = await supabase
+      .from("habits")
+      .select("*")
+      .eq("user_id", userId);
+    if (fullHabits) setHabits(fullHabits);
+    setLoadingData(false);
   };
 
   const fetchGoals = async () => {
@@ -97,8 +110,46 @@ export default function Dashboard() {
         {/* Habits Section */}
         <section>
           <h2 className="text-xl font-semibold mb-3 text-blue-200">Your Habits</h2>
+          <AddHabitForm userId={userId || ""} onCreated={fetchData} />
           <div className="bg-gray-900 p-4 rounded-xl shadow-lg">
-            {logs.length === 0 ? <CardSkeleton /> : userId && <HabitGrid userId={userId} />}
+            {loadingData ? (
+              <CardSkeleton />
+            ) : habits.length === 0 ? (
+              <div className="py-8 text-center text-gray-400">
+                <p className="mb-4">You don't have any habits yet.</p>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={async () => {
+                      if (!userId) return;
+                      // seed demo data for quick testing
+                      await supabase.from('habits').insert([
+                        { user_id: userId, name: 'Drink Water' },
+                        { user_id: userId, name: 'Morning Walk' }
+                      ]);
+                      const today = days[0];
+                      // Insert logs for the created habits by selecting their ids
+                      const { data: created } = await supabase.from('habits').select('id').eq('user_id', userId).in('name', ['Drink Water','Morning Walk']);
+                      if (created && created.length > 0) {
+                        await supabase.from('habit_logs').insert(created.map((h:any) => ({ user_id: userId, habit_id: h.id, date: today, completed: true })));
+                      }
+                      fetchData();
+                    }}
+                    className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500"
+                  >
+                    Add Demo Data
+                  </button>
+
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 rounded border border-gray-700"
+                  >
+                    Refresh
+                  </button>
+                </div>
+              </div>
+            ) : (
+              userId && <HabitGrid userId={userId} />
+            )}
           </div>
         </section>
 
@@ -129,15 +180,31 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold mb-3 text-blue-200">Analytics</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-900 p-4 rounded-xl shadow-lg flex flex-col items-center">
-              {logs.length === 0 ? (
+              {loadingData ? (
                 <CardSkeleton />
+              ) : habitCount === 0 ? (
+                <div className="py-8 text-center text-gray-400">
+                  <p className="mb-2">No habits yet — add a habit to see analytics.</p>
+                </div>
+              ) : logs.length === 0 ? (
+                <div className="py-8 text-center text-gray-400">
+                  <p className="mb-2">No logs recorded yet — mark habits to populate analytics.</p>
+                </div>
               ) : (
                 <CompletionDonut percentage={overall} />
               )}
             </div>
             <div className="bg-gray-900 p-4 rounded-xl shadow-lg">
-              {logs.length === 0 ? (
+              {loadingData ? (
                 <CardSkeleton />
+              ) : habitCount === 0 ? (
+                <div className="py-8 text-center text-gray-400">
+                  <p className="mb-2">No habits yet — add a habit to see analytics.</p>
+                </div>
+              ) : logs.length === 0 ? (
+                <div className="py-8 text-center text-gray-400">
+                  <p className="mb-2">No logs recorded yet — mark habits to populate analytics.</p>
+                </div>
               ) : (
                 <CompletionChart data={analytics} />
               )}
