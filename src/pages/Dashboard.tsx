@@ -63,55 +63,88 @@ export default function Dashboard() {
   const overall = calculateOverallCompletion(logs, habitCount, days.length);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-300">December</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+      {/* Navigation Bar */}
+      <nav className="w-full px-4 py-3 flex items-center justify-between bg-gray-950 shadow-md sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold tracking-wide text-blue-400">Habit Analytics</span>
+          <span className="hidden sm:inline text-xs text-gray-400 ml-2">{user?.email}</span>
+        </div>
         <button
           onClick={signOut}
-          className="text-sm text-gray-400 hover:text-white"
+          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-sm font-semibold transition"
         >
           Logout
         </button>
-      </div>
+      </nav>
 
-      <div className="bg-card p-4 rounded-xl">
-        {logs.length === 0 ? <CardSkeleton /> : userId && <HabitGrid userId={userId} />}
-      </div>
+      <main className="max-w-6xl mx-auto px-2 sm:px-6 py-8 space-y-8">
+        {/* Month Header & Stats */}
+        <section className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+          <h1 className="text-3xl font-bold text-blue-300">December Overview</h1>
+          <div className="flex gap-4">
+            <div className="bg-gray-900 rounded-lg px-4 py-2 text-center">
+              <div className="text-lg font-bold">{habitCount}</div>
+              <div className="text-xs text-gray-400">Habits</div>
+            </div>
+            <div className="bg-gray-900 rounded-lg px-4 py-2 text-center">
+              <div className="text-lg font-bold">{overall}%</div>
+              <div className="text-xs text-gray-400">Completion</div>
+            </div>
+          </div>
+        </section>
 
-      <div className="grid grid-cols-3 gap-4">
-        <GoalsCard
-          title="Weekly Goals"
-          goals={goals.filter(g => g.type === "weekly")}
-          onToggle={toggleGoal}
-        />
-        <GoalsCard
-          title="Monthly Goals"
-          goals={goals.filter(g => g.type === "monthly")}
-          onToggle={toggleGoal}
-        />
-        <GoalsCard
-          title="Annual Goals"
-          goals={goals.filter(g => g.type === "yearly")}
-          onToggle={toggleGoal}
-        />
-      </div>
+        {/* Habits Section */}
+        <section>
+          <h2 className="text-xl font-semibold mb-3 text-blue-200">Your Habits</h2>
+          <div className="bg-gray-900 p-4 rounded-xl shadow-lg">
+            {logs.length === 0 ? <CardSkeleton /> : userId && <HabitGrid userId={userId} />}
+          </div>
+        </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card p-4 rounded-xl">
-          {logs.length === 0 ? (
-            <CardSkeleton />
-          ) : (
-            <CompletionDonut percentage={overall} />
-          )}
-        </div>
-        <div className="bg-card p-4 rounded-xl">
-          {logs.length === 0 ? (
-            <CardSkeleton />
-          ) : (
-            <CompletionChart data={analytics} />
-          )}
-        </div>
-      </div>
+        {/* Goals Section */}
+        <section>
+          <h2 className="text-xl font-semibold mb-3 text-blue-200">Your Goals</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <GoalsCard
+              title="Weekly Goals"
+              goals={goals.filter(g => g.type === "weekly")}
+              onToggle={toggleGoal}
+            />
+            <GoalsCard
+              title="Monthly Goals"
+              goals={goals.filter(g => g.type === "monthly")}
+              onToggle={toggleGoal}
+            />
+            <GoalsCard
+              title="Annual Goals"
+              goals={goals.filter(g => g.type === "yearly")}
+              onToggle={toggleGoal}
+            />
+          </div>
+        </section>
+
+        {/* Analytics Section */}
+        <section>
+          <h2 className="text-xl font-semibold mb-3 text-blue-200">Analytics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-900 p-4 rounded-xl shadow-lg flex flex-col items-center">
+              {logs.length === 0 ? (
+                <CardSkeleton />
+              ) : (
+                <CompletionDonut percentage={overall} />
+              )}
+            </div>
+            <div className="bg-gray-900 p-4 rounded-xl shadow-lg">
+              {logs.length === 0 ? (
+                <CardSkeleton />
+              ) : (
+                <CompletionChart data={analytics} />
+              )}
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

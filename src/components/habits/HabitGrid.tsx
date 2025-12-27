@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import type { Habit, HabitLog } from "../../types";
 import { getDaysOfMonth } from "../../utils/dates";
-import dayjs from "dayjs";
+// import dayjs from "dayjs"; // Removed unused import
 
 const YEAR = 2025;
 const MONTH = 12;
@@ -42,77 +42,60 @@ export default function HabitGrid({ userId }: Props) {
     if (data) setLogs(data);
   };
 
-  const toggleHabit = async (habitId: string, date: string) => {
-    if (saving) return;
-
+  const toggleHabit = async (habitId: string, date: string, completed: boolean) => {
     setSaving(true);
-
-    const existing = logs.find(
-      l => l.habit_id === habitId && l.date === date
-    );
-
-    const payload: HabitLog = {
-      habit_id: habitId,
-      user_id: userId,
-      date,
-      completed: existing ? !existing.completed : true,
-    };
-
-    await supabase.from("habit_logs").upsert(payload);
-
-    setSaving(false);
+    await supabase
+      .from("habit_logs")
+      .upsert({ habit_id: habitId, user_id: userId, date, completed });
     fetchLogs();
+    setSaving(false);
   };
 
-  const isChecked = (habitId: string, date: string) =>
-    logs.some(
-      l => l.habit_id === habitId && l.date === date && l.completed
-    );
-
   return (
-    <div className="overflow-x-auto">
-      <h2 className="text-sm font-semibold text-gray-300 mb-2">
-        Habits
-      </h2>
-
-      {habits.length === 0 ? (
-        <p className="text-gray-400">
-          Add habits to start tracking.
-        </p>
-      ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th className="text-left p-2">Habit</th>
-              {days.map(d => (
-                <th key={d} className="p-1 text-xs text-gray-400">
-                  {dayjs(d).date()}
-                </th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody>
-            {habits.map(habit => (
-              <tr key={habit.id}>
-                <td className="p-2 font-medium">{habit.name}</td>
-                {days.map(date => (
-                  <td key={date} className="text-center">
-                    <input
-                      type="checkbox"
-                      checked={isChecked(habit.id, date)}
-                      onChange={() =>
-                        toggleHabit(habit.id, date)
-                      }
-                      className="accent-blue-500 cursor-pointer"
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+    <div className="w-full">
+      <div className="flex flex-col gap-6">
+        {habits.length === 0 ? (
+          <div className="text-center text-gray-400 py-8">No habits found.</div>
+        ) : (
+          habits.map(habit => {
+            const completedDays = days.filter(day => {
+              const log = logs.find(l => l.habit_id === habit.id && l.date === day);
+              return log?.completed;
+            }).length;
+            const percent = Math.round((completedDays / days.length) * 100);
+            return (
+              <div key={habit.id} className="bg-gray-950 rounded-xl shadow p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-bold text-blue-300">{habit.name}</span>
+                  <span className="text-xs text-gray-400">{percent}% complete</span>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {days.map(day => {
+                    const log = logs.find(l => l.habit_id === habit.id && l.date === day);
+                    return (
+                      <button
+                        key={day}
+                        disabled={saving}
+                        onClick={() => toggleHabit(habit.id, day, !log?.completed)}
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-150
+                          ${log?.completed ? 'bg-blue-500 border-blue-500' : 'bg-gray-900 border-gray-700'}
+                          hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                        title={`Mark ${habit.name} as ${log?.completed ? 'incomplete' : 'complete'} for ${day}`}
+                      >
+                        {log?.completed && (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

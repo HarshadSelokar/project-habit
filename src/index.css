@@ -1,11 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
+  /* Theme colors */
+  --bg: #0b1220;
+  --bg-2: #0f1724;
+  --card: #0b1226;
+  --muted: #111827;
+  --accent: #3b82f6;
+  --accent-2: #60a5fa;
+  --text: rgba(255,255,255,0.92);
+  --muted-text: #9CA3AF;
+
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--text);
+  background-color: var(--bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,15 +38,36 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  display: block;
   min-width: 320px;
   min-height: 100vh;
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  color: var(--text);
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+}
+
+/* Utility tokens used in components */
+.bg-card { background-color: var(--card); }
+.bg-muted { background-color: var(--muted); }
+.text-muted { color: var(--muted-text); }
+.accent { color: var(--accent); }
+.btn-accent { background-color: var(--accent); color: white; }
+
+/* Make inputs blend with theme */
+input, textarea, select {
+  background-color: transparent;
+  color: var(--text);
+}
+
+/* Reduce focus outline but keep accessibility */
+button:focus, input:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.12);
+  border-radius: 6px;
 }
 
 button {
