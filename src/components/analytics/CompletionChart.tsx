@@ -6,7 +6,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
-import { DailyCompletion } from "../../utils/analytics";
+import type { DailyCompletion } from "../../utils/analytics";
 import dayjs from "dayjs";
 
 type Props = {

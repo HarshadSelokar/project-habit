@@ -1,4 +1,4 @@
-import { HabitLog } from "../types";
+import type { HabitLog } from "../types";
 
 export type DailyCompletion = {
   date: string;
